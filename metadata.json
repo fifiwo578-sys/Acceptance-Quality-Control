@@ -1,0 +1,6 @@
+{
+  "name": "Acceptance and Quality Control",
+  "description": "Acceptance and Quality Control management dashboard for Ethio-Djibouti Railway with Daily Reporting, Quality Control, and Departmental Tasks",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
