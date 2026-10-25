@@ -1,0 +1,29 @@
+
+name: EDR AQMS Daily Report
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+      timezone: "Africa/Addis_Ababa"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Verify secrets
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+        run: |
+          test -n "$RESEND_API_KEY" || exit 1
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || exit 1
+          test -n "$RESEND_FROM_EMAIL" || exit 1
+          echo "Required secrets are configured."
