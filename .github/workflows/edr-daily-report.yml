@@ -2,9 +2,6 @@
 name: EDR AQMS Daily Report
 
 on:
-  schedule:
-    - cron: "0 7 * * *"
-      timezone: "Africa/Addis_Ababa"
   workflow_dispatch:
 
 permissions:
@@ -14,16 +11,45 @@ jobs:
   daily-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v4
-
-      - name: Verify secrets
+      - name: Send Resend test email
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          RESEND_TEST_TO_EMAIL: ${{ secrets.RESEND_TEST_TO_EMAIL }}
         run: |
-          test -n "$RESEND_API_KEY" || exit 1
-          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || exit 1
-          test -n "$RESEND_FROM_EMAIL" || exit 1
-          echo "Required secrets are configured."
+          python - <<'PY'
+          import os
+          import json
+          import urllib.request
+          import urllib.error
+
+          api_key = os.environ["RESEND_API_KEY"]
+          sender = os.environ["RESEND_FROM_EMAIL"]
+          recipient = os.environ["RESEND_TEST_TO_EMAIL"]
+
+          payload = {
+              "from": sender,
+              "to": [recipient],
+              "subject": "EDR AQMS - Resend Test",
+              "text": "This is a test email from the EDR AQMS GitHub Actions workflow."
+          }
+
+          request = urllib.request.Request(
+              "https://api.resend.com/emails",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Authorization": f"Bearer {api_key}",
+                  "Content-Type": "application/json"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  result = json.loads(response.read().decode("utf-8"))
+                  print("Resend accepted the test email. Message ID:", result.get("id", "unknown"))
+          except urllib.error.HTTPError as error:
+              print("Resend request failed with HTTP status:", error.code)
+              print(error.read().decode("utf-8"))
+              raise
+          PY
